@@ -33,8 +33,7 @@
     <div class="row">
         <div class="col-md-12">
             {{-- Remplace la card du haut par ceci --}}
-            <div
-                class="card @if ($user->isEnabled()) card-primary @else card-warning @endif card-outline mb-3 shadow-sm">
+            <div class="card mb-3 shadow-sm">
                 <div class="card-body d-flex align-items-center justify-content-between gap-3">
                     <div class="d-flex align-items-center gap-3">
                         <div class="rounded-circle d-flex align-items-center justify-content-center"
@@ -109,10 +108,22 @@
             <div class="col-md-3">
 
                 <!-- Profile Image -->
-                <div class="card mb-3 shadow-sm">
+                <div
+                    class="card @if ($user->isEnabled()) card-primary @else card-warning @endif card-outline mb-3 shadow-sm">
                     <div class="card-body">
+                        <div class="text-center">
+                            <p data-letters="{{ $initial }}"></p>
+                        </div>
+
+                        <h3 class="profile-username text-center">{{ $user->displayName[0] }}</h3>
+
+                        <p class="text-muted text-center"> <a href="mailto:{{ $user->mail[0] }}">{{ $user->mail[0] }}</a>
+                        </p>
 
                         <ul class="list-group list-group-unbordered mb-3">
+                            <li class="list-group-item">
+                                <b>UID</b> <a class="float-end">{{ $user->sAMAccountName[0] }}</a>
+                            </li>
                             <li class="list-group-item">
                                 <b>Téléphone</b> <a href="tel:{{ $user->telephonenumber[0] ?? '' }}"
                                     class="float-end">{{ $user->telephonenumber[0] ?? '' }}</a>
@@ -225,157 +236,127 @@
                             {{-- Tableau Informations --}}
                             <div class="tab-pane fade show active" id="pills-home" role="tabpanel"
                                 aria-labelledby="pills-home-tab">
-                                <form class="row g-3" role="form" method="POST"
+                                <form class="row g-3" role='form' method='POST'
                                     action='{{ route('user.update', ['id' => $user->getDn(), 'type' => 'general']) }}'>
+
                                     @csrf
 
-                                    {{-- Identité --}}
-                                    <div class="col-12">
-                                        <h6 class="text-muted mb-1">Identité</h6>
-                                        <hr class="mt-1 mb-2">
-                                    </div>
                                     <div class="col-md-4">
-                                        <label for="givenname" class="form-label">Prénom<span
-                                                class="text-danger">*</span></label>
+                                        <label for="givenname" class="form-label">Prenom*</label>
                                         <input type="text" class="form-control" id="givenname" name="givenname"
-                                            value="{{ $user->givenname[0] ?? '' }}" required>
+                                            placeholder="Prénom" value="{{ $user->givenname[0] ?? '' }}" required="">
                                     </div>
                                     <div class="col-md-4">
-                                        <label for="sn" class="form-label">Nom<span
-                                                class="text-danger">*</span></label>
+                                        <label for="sn" class="form-label">Nom*</label>
                                         <input type="text" class="form-control" id="sn" name="sn"
-                                            value="{{ $user->sn[0] ?? '' }}" required>
+                                            placeholder="Nom" value="{{ $user->sn[0] ?? '' }}" required="">
                                     </div>
                                     <div class="col-md-4">
-                                        <label for="displayname" class="form-label">Nom d’affichage</label>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" id="displayname"
-                                                name="displayname" value="{{ $user->displayname[0] ?? '' }}">
-                                            <button class="btn btn-outline-secondary" type="button"
-                                                id="btnRegenDisplay">
-                                                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                            </button>
-                                        </div>
-                                        <div class="form-text">Par défaut : « Prénom Nom ». Le bouton régénère la valeur.
-                                        </div>
-                                    </div>
-
-                                    {{-- Compte --}}
-                                    <div class="col-12 pt-1">
-                                        <h6 class="text-muted mb-1">Compte</h6>
-                                        <hr class="mt-1 mb-2">
+                                        <label for="initials" class="form-label">Initials</label>
+                                        <input type="text" class="form-control" id="initials" name="initials"
+                                            placeholder="Initials" value="{{ $user->initials[0] ?? '' }}">
                                     </div>
                                     <div class="col-md-5">
-                                        <label for="samaccountname" class="form-label">UID</label>
-                                        <input type="text" class="form-control" id="samaccountname" disabled
-                                            value="{{ $user->samaccountname[0] ?? '' }}">
+                                        <label for="samaccountname" class="form-label">Nom d'utilisateur
+                                            (UID)</label>
+                                        <input type="text" class="form-control" id="samaccountname"
+                                            name="samaccountname" placeholder="UID utilisateur"
+                                            value="{{ $user->samaccountname[0] ?? '' }}" disabled>
+                                    </div>
+                                    <div class="col-md-5">
+                                        <label for="displayname" class="form-label">Nom
+                                            d'affichage</label>
+                                        <input type="text" class="form-control" id="displayname" name="displayname"
+                                            placeholder="Nom affiché pour la session"
+                                            value="{{ $user->displayname[0] ?? '' }}">
+                                    </div>
+                                    <div class="col-12">
+                                        <label for="mail" class="form-label">Adresse Mail</label>
+
+                                        <input type="mail" class="form-control" id="mail" name="mail"
+                                            placeholder="Email" autocomplete="off" value="{{ $user->mail[0] ?? '' }}"
+                                            required="">
                                     </div>
                                     <div class="col-md-4">
-                                        <label for="typeOfAccount" class="form-label">Type de compte</label>
-                                        <select class="form-select" id="typeOfAccount" name="typeOfAccount" required>
-                                            <option value=""
-                                                {{ empty(optional($user->typeOfAccount)[0]) ? 'selected' : '' }} disabled>
-                                                Aucun</option>
-                                            <option value="utilisateur"
-                                                {{ optional($user->typeOfAccount)[0] === 'utilisateur' ? 'selected' : '' }}>
-                                                Utilisateur</option>
-                                            <option value="fonctionnel"
-                                                {{ optional($user->typeOfAccount)[0] === 'fonctionnel' ? 'selected' : '' }}>
-                                                Fonctionnel</option>
-                                            <option value="provisoire"
-                                                {{ optional($user->typeOfAccount)[0] === 'provisoire' ? 'selected' : '' }}>
-                                                Provisoire</option>
-                                            <option value="stagiaire"
-                                                {{ optional($user->typeOfAccount)[0] === 'stagiaire' ? 'selected' : '' }}>
-                                                Stagiaire</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Importé du LDAP</label>
-                                        <input type="text" class="form-control"
-                                            value="{{ $user->syncToLDAP[0] ?? '' }}" disabled>
-                                    </div>
-
-                                    {{-- Organisation --}}
-                                    <div class="col-12 pt-1">
-                                        <h6 class="text-muted mb-1">Organisation</h6>
-                                        <hr class="mt-1 mb-2">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="orgunit" class="form-label">Unité d’organisation</label>
-                                        <select class="form-select" name="orgunit" id="orgunit">
-
+                                        <label for="orgunit" class="form-label">Organisation</label>
+                                        <select class="form-select" name="orgunit" id="orgunit" style="width: 100%;">
                                             @foreach ($ouList as $ou)
                                                 <option value="{{ $ou->getDn() }}"
                                                     @if ($user->getParentName() == $ou->getName()) selected @endif>
                                                     {{ $ou->getName() }}
                                                 </option>
                                             @endforeach
-
                                         </select>
-                                        <div class="form-text text-warning">
-                                            Changer l’OU déplacera l’objet dans l’AD (move). Une confirmation sera demandée.
-                                        </div>
                                     </div>
+                                    <div class="col-md-4">
+                                        <label for="typeOfAccount" class="form-label">Type de
+                                            compte</label>
+                                        <select class="form-select" id="typeOfAccount" name="typeOfAccount" required>
+                                            <option value=""
+                                                {{ empty(optional($user->typeOfAccount)[0]) ? 'selected' : '' }} disabled>
+                                                Aucun
+                                            </option>
+                                            <option value="utilisateur"
+                                                {{ optional($user->typeOfAccount)[0] === 'utilisateur' ? 'selected' : '' }}>
+                                                Utilisateur
+                                            </option>
+                                            <option value="fonctionnel"
+                                                {{ optional($user->typeOfAccount)[0] === 'fonctionnel' ? 'selected' : '' }}>
+                                                Fonctionnel
+                                            </option>
+                                            <option value="provisoire"
+                                                {{ optional($user->typeOfAccount)[0] === 'provisoire' ? 'selected' : '' }}>
+                                                Provisoire
+                                            </option>
+                                            <option value="stagiaire"
+                                                {{ optional($user->typeOfAccount)[0] === 'stagiaire' ? 'selected' : '' }}>
+                                                Stagiaire
+                                            </option>
+                                        </select>
 
-                                    {{-- Contact --}}
-                                    <div class="col-12 pt-1">
-                                        <h6 class="text-muted mb-1">Contact</h6>
-                                        <hr class="mt-1 mb-2">
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="mail" class="form-label">Adresse e-mail</label>
-                                        <input type="email" class="form-control" id="mail" name="mail"
-                                            value="{{ $user->mail[0] ?? '' }}" required>
+                                    <div class="col-md-4">
+                                        <label for="syncToLDAP" class="form-label">Importer du
+                                            LDAP</label>
+                                        <input type="text" class="form-control" id="syncToLDAP" autocomplete="off"
+                                            value="{{ $user->syncToLDAP[0] ?? '' }}" disabled="disabled">
                                     </div>
-
-                                    {{-- Description --}}
                                     <div class="col-12">
                                         <label for="description" class="form-label">Description</label>
-                                        <textarea class="form-control" id="description" name="description" rows="2">{{ $user->description[0] ?? '' }}</textarea>
+                                        <textarea type="text" class="form-control" id="description" name="description" placeholder="Description"
+                                            autocomplete="off">{{ $user->description[0] ?? '' }}</textarea>
                                     </div>
-
-                                    {{-- Technique (replié) --}}
-                                    <div class="col-12">
-                                        <a class="small" data-bs-toggle="collapse" href="#techCollapse" role="button"
-                                            aria-expanded="false">
-                                            <i class="fa-solid fa-chevron-down"></i> Informations techniques
-                                        </a>
-                                        <div class="collapse mt-2" id="techCollapse">
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <label class="form-label">GUID</label>
-                                                    <div class="input-group">
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $user->getConvertedGuid() }}" readonly>
-                                                        <button class="btn btn-outline-secondary" type="button"
-                                                            onclick="navigator.clipboard.writeText('{{ $user->getConvertedGuid() }}'); toastr?.success('GUID copié');">
-                                                            <i class="fa-regular fa-copy"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="form-label">DN</label>
-                                                    <div class="input-group">
-                                                        <input type="text" class="form-control"
-                                                            value="{{ $user->getDn() }}" readonly>
-                                                        <button class="btn btn-outline-secondary" type="button"
-                                                            onclick="navigator.clipboard.writeText('{{ $user->getDn() }}'); toastr?.success('DN copié');">
-                                                            <i class="fa-regular fa-copy"></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                    <div class="col-md-6">
+                                        <label class="">GUID</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control"
+                                                value="{{ $user->getConvertedGuid() }}" readonly>
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                onclick="navigator.clipboard.writeText('{{ $user->getConvertedGuid() }}'); toastr?.success('GUID copié');">
+                                                <i class="fa-regular fa-copy"></i>
+                                            </button>
                                         </div>
                                     </div>
 
-                                    {{-- Actions --}}
-                                    <div class="col-12 d-flex justify-content-end">
-                                        <button type="submit" id="btnSaveGeneral"
-                                            class="btn btn-secondary">Enregistrer</button>
+                                    <div class="col-md-6">
+                                        <label class="">Distinguished name (DN)</label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" value="{{ $user->getDn() }}"
+                                                readonly>
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                onclick="navigator.clipboard.writeText('{{ $user->getDn() }}'); toastr?.success('DN copié');">
+                                                <i class="fa-regular fa-copy"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+
+
+                                    <div class="col-12">
+                                        <button type="submit"
+                                            class="btn btn-danger">{{ __('validation.save') }}</button>
                                     </div>
                                 </form>
-
                             </div>
                             {{-- Tableau LDAP --}}
                             <div class="tab-pane fade" id="pills-ldapacad" role="tabpanel"
@@ -848,19 +829,6 @@
 @section('scriptjs')
     <script type="module">
         ///////
-        // Régénérer displayName (Prénom + Nom)
-        document.getElementById('btnRegenDisplay')?.addEventListener('click', () => {
-            const g = document.getElementById('givenname')?.value?.trim() || '';
-            const s = document.getElementById('sn')?.value?.trim() || '';
-            document.getElementById('displayname').value = `${g} ${s}`.trim();
-        });
-
-        // Alerte sur déplacement d'OU
-        document.getElementById('orgunit')?.addEventListener('change', (e) => {
-            if (!confirm("Confirmer le déplacement de l’utilisateur vers l’OU sélectionnée ?")) {
-                e.target.selectedIndex = 0; // rollback simple
-            }
-        });
         ///////
         var path = "{{ route('user.autocomplete') }}";
 

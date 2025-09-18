@@ -2,7 +2,9 @@
 
 return [
     'stockmanager' => ['base_url' => env('STOCKMANAGER_BASE_URL', 'https://stockmanager.in.ac-creteil.fr/api')],
-
+    'activestockm' => env('ACTIVE_STOCKM', false),
+    'repperso' => env('ACTIVE_REPPERSO', false),
+    'repperso' => env('OU_GROUPES', false),
 
     'entities' => [
         'DSDEN77' => [

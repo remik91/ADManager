@@ -559,63 +559,125 @@ class Utilisateur extends Controller
 
     public function checkldap(Request $request)
     {
-        // Valider l'entrée
-        $searchTerm = $request->input('q');
-
-        $userADdn = UserAD::findby('samaccountname', $searchTerm)->getDn();
-
-        if (!$searchTerm) {
-            return response()->json(['error' => 'Entrée invalide'], 400);
+        $searchTerm = trim((string) $request->input('q'));
+        if ($searchTerm === '') {
+            return response('<div class="alert alert-danger">Entrée invalide.</div>', 400);
         }
 
-        // Définir les OUs à rechercher
-        $ous = ['ou=Personnels EN,ou=ac-creteil,ou=education,o=gouv,c=fr', 'ou=Autres,ou=ac-creteil,ou=education,o=gouv,c=fr'];
+        // AD user
+        $userAD = UserAD::findBy('samaccountname', $searchTerm);
+        if (!$userAD) {
+            return response('<div class="alert alert-warning">Aucun compte AD trouvé pour <code>' . e($searchTerm) . '</code>.</div>', 404);
+        }
+        $userADdn = $userAD->getDn();
 
-        // Initialiser le tableau de résultats
-        $userldap = [];
+        // LDAP ACA search (whitelist OU)
+        $ous = [
+            'ou=Personnels EN,ou=ac-creteil,ou=education,o=gouv,c=fr',
+            'ou=Autres,ou=ac-creteil,ou=education,o=gouv,c=fr',
+        ];
 
+        $attrs = [
+            'uid',
+            'cn',
+            'givenname',
+            'sn',
+            'mail',
+            'division',
+            'service',
+            'fonction',
+            'title',
+            'datenaissance',
+            'finfonction',
+            'dateff',
+            'bureau',
+            'radiusgroupname',
+            'cremdprobust'
+        ];
 
-
-        // Parcourir les OUs
+        $userldap = null;
         foreach ($ous as $ou) {
-            $result = UserLDAP::query()
+            $userldap = UserLDAP::query()
                 ->in($ou)
+                ->select($attrs)
                 ->where('uid', '=', $searchTerm)
                 ->first();
-
-            if ($result) {
-                $userldap = $result;
-                break; // Si on trouve des résultats, arrêter la boucle
-            }
+            if ($userldap) break;
         }
-        return view('user.checkldap', ['usersldap' => $userldap, 'userADdn' => $userADdn]);
+
+        // Render partial (même si null → message "non trouvé")
+        return view('user.checkldap_card', [
+            'userldap' => $userldap,
+            'userAD'   => $userAD,
+            'userADdn' => $userADdn,
+        ]);
     }
 
     public function resynchro(Request $request)
     {
-        $ADdn = $request->input('AD');
-        $LDAPdn = $request->input('ldap');
+        $data = $request->validate([
+            'ad_dn'   => ['required', 'string'],
+            'ldap_dn' => ['required', 'string'],
+        ]);
 
-        $userAD = UserAD::find($ADdn);
-        $userLDAP = UserLDAP::find($LDAPdn);
+        $ad   = UserAD::find($data['ad_dn']);
+        $ldap = UserLDAP::find($data['ldap_dn']);
+
+        if (!$ad || !$ldap) {
+            return back()->with('error', "Impossible de charger l'utilisateur AD ou LDAP.");
+        }
 
         try {
-            $userAD->fill([
-                'mail' => $userLDAP->mail,
-                'telephoneNumber' => $userLDAP->telephonenumber,
-                'physicaldeliveryofficename' => $userLDAP->bureau,
-                'title' => $userLDAP->fonction,
-                'department' => $userLDAP->service,
-                'division' => $userLDAP->division
-            ]);
+            // 1) Récup LDAP (variables distinctes, pas de nom 'mail' ambigu)
+            $given     = $ldap->getFirstAttribute('givenname');
+            $sn        = $ldap->getFirstAttribute('sn');
+            $email     = $ldap->getFirstAttribute('mail');
+            $division  = $ldap->getFirstAttribute('division');
+            $service   = $ldap->getFirstAttribute('service');
+            $fonction  = $ldap->getFirstAttribute('fonction');
+            $titleLdap = $ldap->getFirstAttribute('title');
+            $bureau    = $ldap->getFirstAttribute('bureau');
 
-            $userAD->SyncToLDAP = "TRUE";
+            // 2) Push AD (uniquement si non vide) via setFirstAttribute()
+            if (!empty($given)) {
+                $ad->setFirstAttribute('givenName', $given);
+            }
+            if (!empty($sn)) {
+                $ad->setFirstAttribute('sn', $sn);
+            }
 
-            $userAD->save();
-            activity()->log("La resynchronisation LDAP=>AD est terminé pour l'utilisateur " . $userAD->displayname[0]);
-            return back()->with('message', "La resynchronisation LDAP=>AD est terminé pour l'utilisateur " . $userAD->displayname[0]);
-        } catch (\LdapRecord\LdapRecordException $e) {
-            return back()->with('error', "Une erreur est survenue: " . $e->getDetailedError()->getDiagnosticMessage());
+            $displayName = trim(($given ? $given . ' ' : '') . ($sn ?? ''));
+            if (!empty($displayName)) {
+                $ad->setFirstAttribute('displayName', $displayName);
+            }
+
+            if (!empty($email)) {
+                $ad->setFirstAttribute('mail', $email);
+            }
+            if (!empty($division)) {
+                $ad->setFirstAttribute('division', $division);
+            }
+            if (!empty($service)) {
+                $ad->setFirstAttribute('department', $service);
+            }
+
+            $titleFinal = $fonction ?: $titleLdap;
+            if (!empty($titleFinal)) {
+                $ad->setFirstAttribute('title', $titleFinal);
+            }
+
+            if (!empty($bureau)) {
+                $ad->setFirstAttribute('physicalDeliveryOfficeName', $bureau);
+            }
+
+            // 3) Save
+            $ad->save();
+
+            activity()->log("Synchronisation AD depuis LDAP pour {$ad->getName()} ({$ad->samaccountname[0]})");
+
+            return back()->with('message', 'Synchronisation réussie depuis le LDAP académique.');
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Échec de la synchronisation : ' . $e->getMessage());
         }
     }
 

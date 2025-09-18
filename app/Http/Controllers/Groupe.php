@@ -148,17 +148,17 @@ class Groupe extends Controller
 
         // Feedback utilisateur
         if ($errors) {
-            return redirect()->route('gl.index')->with(
+            return redirect()->route('partage.index')->with(
                 'warning',
                 "Créés: " . implode(', ', $created) . ". Déjà présents: " . implode(', ', $skipped) . ". Erreurs: " . implode(' | ', $errors)
             );
         }
 
         if ($createBoth) {
-            return redirect()->route('gl.index')->with('message', "Groupes créés : " . implode(' & ', $created));
+            return redirect()->route('partage.index')->with('message', "Groupes créés : " . implode(' & ', $created));
         }
-
-        return redirect()->route('gl.index')->with('message', "Groupe {$created[0]} créé.");
+        activity()->log('GL_CREATE :' . $gl->getDn());
+        return back()->with('message', "Groupe {$created[0]} créé.");
     }
 
     private function buildGlCn(string $entity, array $segments, string $access): string

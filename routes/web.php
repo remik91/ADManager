@@ -39,7 +39,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/user/autocomplete', [Utilisateur::class, 'autocomplete'])->name('user.autocomplete');
     Route::post('/user/search', [Utilisateur::class, 'search'])->name('user.search');
     Route::get('/user/checkldap', [Utilisateur::class, 'checkldap'])->name('user.checkldap');
-    Route::get('/user/resynchro', [Utilisateur::class, 'resynchro'])->name('user.resynchro');
+    Route::post('/user/resynchro', [Utilisateur::class, 'resynchro'])->name('user.resynchro');
     Route::get('/user/trash/{dnuser?}', [Utilisateur::class, 'corbeille'])->name('user.trash');
     Route::post('/user/{dnuser?}/softphonie', [Utilisateur::class, 'ToogleSoftphonie'])->name('user.softphonie');
     Route::get('/user/finfonction', [Utilisateur::class, 'finfonction'])->name('user.finfonction');
