@@ -191,13 +191,13 @@
                                         data-bs-target="#pills-groupes" role="tab" aria-controls="pills-groupes"
                                         aria-selected="false" href="#">Groupes</a>
                                 </li>
-                                @if (env('ACTIVE_REPPERSO'))
-                                    <li class="nav-item" role="presentation">
-                                        <a class="nav-link" id="pills-dossier-tab" data-bs-toggle="pill"
-                                            data-bs-target="#pills-dossier" role="tab" aria-controls="pills-dossier"
-                                            aria-selected="false" href="#">Dossier</a>
-                                    </li>
-                                @endif
+
+                                <li class="nav-item" role="presentation">
+                                    <a class="nav-link" id="pills-dossier-tab" data-bs-toggle="pill"
+                                        data-bs-target="#pills-dossier" role="tab" aria-controls="pills-dossier"
+                                        aria-selected="false" href="#">Dossier</a>
+                                </li>
+
 
                                 <li class="nav-item" role="ldapacad">
                                     <a class="nav-link" id="pills-ldapacad-tab" data-bs-toggle="pill"
@@ -205,14 +205,14 @@
                                         aria-selected="false" href="#">LDAP
                                         Académique</a>
                                 </li>
-                                @if (env('ACTIVE_STOCKM'))
-                                    <li class="nav-item" role="stockmanager">
-                                        <a class="nav-link" id="pills-stockmanager-tab" data-bs-toggle="pill"
-                                            data-bs-target="#pills-stockmanager" role="tab"
-                                            aria-controls="pills-stockmanager" aria-selected="false"
-                                            href="#">StockManager</a>
-                                    </li>
-                                @endif
+
+                                <li class="nav-item" role="stockmanager">
+                                    <a class="nav-link" id="pills-stockmanager-tab" data-bs-toggle="pill"
+                                        data-bs-target="#pills-stockmanager" role="tab"
+                                        aria-controls="pills-stockmanager" aria-selected="false"
+                                        href="#">StockManager</a>
+                                </li>
+
 
                             </ul>
                         </div>
