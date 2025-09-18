@@ -21,4 +21,4 @@ import 'datatables.net-select-bs5';
 import 'datatables.net-buttons/js/buttons.html5.mjs';
 import 'datatables.net-buttons/js/buttons.print.mjs';
 
-// 👉 NE PAS faire: window.DataTable = DataTable; (inutile en mode jQuery)
+

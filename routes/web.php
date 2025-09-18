@@ -67,7 +67,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/group', [Groupe::class, 'index'])->name('group.index');
     Route::get('/group/view/{dn?}', [Groupe::class, 'view'])->name('group.view');
     Route::get('/group/{dn?}/edit', [Groupe::class, 'edit'])->name('group.edit');
-    Route::post('/group/create', [Groupe::class, 'create'])->name('group.create');
     Route::post('/group/create_gl', [Groupe::class, 'create_partage'])->name('group.creategl');
     Route::delete('/group/{dn?}/remove', [Groupe::class, 'destroy'])->name('group.remove');
     Route::delete('/group/{dn?}/removeuser', [Groupe::class, 'remove_user'])->name('group.removeuser');

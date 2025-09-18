@@ -18,7 +18,7 @@ class Groupe extends Controller
     {
         $listgroup = GroupAD::query()
             ->where('objectclass', '=', 'group')
-            ->in(env('OU_GROUPES'))
+            ->in("OU=Groupes,DC=ad,DC=ac-creteil")
             ->get();
 
         return view('group.index_group', ['listgroup' => $listgroup]);
@@ -72,24 +72,6 @@ class Groupe extends Controller
         $membrede = $group->groups()->recursive()->get();
 
         return view("group.view_group", ['group' => $group, 'members' => $members, 'membrede' => $membrede]);
-    }
-
-    public function create(Request $request)
-    {
-        $group = (new GroupAD)->inside(env('OU_GROUPES'));
-
-        $group->cn =  $request->input('nomGroupe');
-        $group->samaccountname =  $request->input('nomGroupe');
-        $group->description =  $request->input('description');
-
-        try {
-            $group->save();
-            $group->refresh();
-            return redirect()->route('group.view', ['dn' => $group->getDn()]);
-        } catch (\LdapRecord\LdapRecordException $e) {
-
-            return back()->with('error', "Une erreur est survenue: " . $e->getDetailedError()->getDiagnosticMessage());
-        }
     }
 
     public function create_service(Request $request)

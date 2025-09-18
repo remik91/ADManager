@@ -4,35 +4,6 @@
 
 @section('content')
 
-    <div class="row mb-3">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-body mb-3">
-                    <form role="form" action="{{ route('group.create') }}" method="POST" autocomplete="off" class="row g-3">
-                        @csrf
-                        <div class="col-md-4">
-                            <label for="nomGroupe" class="form-label">Création du groupe</label>
-                            <input type="text" class="form-control" id="nomGroupe" name="nomGroupe"
-                                placeholder="Nom du groupe" required>
-                        </div>
-                        <div class="col-md-4">
-                            <label for="description" class="form-label">Description du groupe</label>
-                            <input class="form-control" id="description" name="description" placeholder="Description">
-                        </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <button type="submit" class="btn btn-primary">Créer</button>
-                        </div>
-
-                    </form>
-
-                </div>
-
-            </div>
-
-        </div>
-    </div>
-
-
     @if ($listgroup->count() > 0)
         <div class="row">
             <div class="col-12">
