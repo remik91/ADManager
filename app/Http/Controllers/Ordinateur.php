@@ -151,63 +151,83 @@ class Ordinateur extends Controller
         $search = trim($request->input('search', ''));
         $root   = 'OU=Ordinateurs,DC=ad,DC=ac-creteil';
 
-        // Cas 1 : GUID ou clé -> recherche directe sur msFVE-RecoveryInformation
-        $guidRegex = '/^\{?[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\}?$/';
-        $looksLikeRecoveryKey = (bool) preg_match('/[0-9]{6,}(-[0-9]{6,})+/', $search);
+        $perPage = (int) $request->integer('per_page', 25);
+        $page    = (int) $request->integer('page', 1);
 
         $items = collect();
 
-        if ($search !== '' && (preg_match($guidRegex, $search) || $looksLikeRecoveryKey)) {
+        $isGuid = $search !== '' && preg_match('/^\{?[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}\}?$/', $search);
+        $isRecovery = $search !== '' && (bool) preg_match('/[0-9]{6,}(-[0-9]{6,})+/', $search);
+
+        if ($search === '') {
+            // Liste par défaut
+            $items = \App\Ldap\AD\BitlockAD::in($root)
+                ->select(['cn', 'whencreated', 'distinguishedname', 'msfve-recoverypassword'])
+                ->orderBy('whencreated', 'desc')
+                ->limit(100)
+                ->get();
+        } elseif ($isGuid || $isRecovery) {
+            // GUID ou clé
             $q = \App\Ldap\AD\BitlockAD::in($root)
                 ->select(['cn', 'whencreated', 'distinguishedname', 'msfve-recoverypassword'])
                 ->orderBy('whencreated', 'desc');
 
-            if (preg_match($guidRegex, $search)) {
+            if ($isGuid) {
                 $q->whereContains('cn', trim($search, '{}'));
             } else {
                 $q->whereContains('msfve-recoverypassword', $search);
             }
 
-            $items = $items->merge($q->get());
+            $items = $q->get();
         } else {
-            // Cas 2 : recherche par NOM de machine -> 2 étapes
-
-            // On tolère que l’utilisateur tape "PC-NAME$" (sAMAccountName) : on retire le $
+            // Recherche par NOM de machine (2 temps)
             $needle = rtrim($search, '$');
 
-            // 2.1 Trouver les ordinateurs candidats
-            $computers = \App\Ldap\AD\ComputerAD::query()
-                ->in($root)
-                ->select(['cn', 'distinguishedname', 'samaccountname', 'name'])
-                ->whereContains('cn', $needle)
-                ->orWhere('samaccountname', '=', $needle . '$')
-                ->orWhereContains('name', $needle)
-                ->limit(50) // évite de charger trop de PCs
-                ->get();
-
-            // 2.2 Pour chacun, récupérer les objets BitLocker situés DESSOUS
-            foreach ($computers as $c) {
-                $itemsForC = \App\Ldap\AD\BitlockAD::query()
-                    ->in($c->getDn())
+            if (mb_strlen($needle) < 2) {
+                // Trop court → fallback liste récente
+                $items = \App\Ldap\AD\BitlockAD::in($root)
                     ->select(['cn', 'whencreated', 'distinguishedname', 'msfve-recoverypassword'])
                     ->orderBy('whencreated', 'desc')
+                    ->limit(100)
                     ->get();
+            } else {
+                // 1) Candidats ordinateurs — ⛔️ sans closure
+                $cq = \App\Ldap\AD\ComputerAD::query()
+                    ->in($root)
+                    ->select(['cn', 'distinguishedname', 'samaccountname', 'name']);
 
-                $items = $items->merge($itemsForC);
+                // Première condition
+                $cq->whereContains('cn', $needle);
+                // Puis OR…
+                $cq->orWhere('samaccountname', '=', $needle . '$');
+                $cq->orWhereContains('name', $needle);
+
+                $computers = $cq->limit(50)->get();
+
+                // 2) Récup des objets BitLocker sous chaque ordinateur
+                foreach ($computers as $c) {
+                    $itemsForC = \App\Ldap\AD\BitlockAD::query()
+                        ->in($c->getDn())
+                        ->select(['cn', 'whencreated', 'distinguishedname', 'msfve-recoverypassword'])
+                        ->orderBy('whencreated', 'desc')
+                        ->get();
+
+                    $items = $items->merge($itemsForC);
+                }
             }
         }
 
-        // Normaliser pour la vue
+        // Normalisation
         $rows = $items->map(function ($b) {
-            $dn = $b->getDn(); // CN={GUID},CN=PC-NAME,OU=...,DC=...
-            $computerDn = \Illuminate\Support\Str::after($dn, ','); // CN=PC-NAME,OU=...,DC=...
+            $dn = $b->getDn();                                      // CN={GUID},CN=PC,OU=...
+            $computerDn = \Illuminate\Support\Str::after($dn, ','); // CN=PC,OU=...
             $computerCn = substr(explode(',', $computerDn)[0] ?? '', 3);
             preg_match('/\{(.+?)\}/', $b->getName(), $m);
             $guid = $m[1] ?? null;
 
             return [
                 'computer'     => $computerCn ?: null,
-                'computer_dn'  => $computerDn ?: null,                // DN complet côté machine (pour ton lien)
+                'computer_dn'  => $computerDn ?: null,
                 'guid'         => $guid,
                 'key'          => $b['msfve-recoverypassword'][0] ?? null,
                 'when'         => $b->whencreated,
@@ -215,12 +235,9 @@ class Ordinateur extends Controller
             ];
         });
 
-        // Pagination manuelle Laravel
-        $perPage = (int) $request->integer('per_page', 25);
-        $page    = (int) $request->integer('page', 1);
-        $total   = $rows->count();
-        $slice   = $rows->slice(($page - 1) * $perPage, $perPage);
-
+        // Pagination Laravel
+        $total = $rows->count();
+        $slice = $rows->slice(($page - 1) * $perPage, $perPage);
         $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
             $slice,
             $total,
