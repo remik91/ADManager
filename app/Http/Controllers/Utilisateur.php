@@ -529,10 +529,13 @@ class Utilisateur extends Controller
                 $q->orderBy('uid');
                 break;
             case 'mail':
-                $q->whereContains('mail', $term);
+                $q->wherewhereContains('mail', $term);
                 $q->orderBy('mail');
                 break;
             case 'sn':
+                $q->wherewhereContains('sn', $term);
+                $q->orderBy('sn');
+                break;
             default:
                 // Nom : on cherche dans sn + givenname
                 $q->whereContains('sn', $term)
