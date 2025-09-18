@@ -533,7 +533,7 @@ class Utilisateur extends Controller
                 $q->orderBy('mail');
                 break;
             case 'sn':
-                $q->wherewhereContains('sn', $term);
+                $q->where('sn', 'starts_with', $term);
                 $q->orderBy('sn');
                 break;
             default:
