@@ -1,6 +1,9 @@
 <?php
 
 return [
+    'stockmanager' => ['base_url' => env('STOCKMANAGER_BASE_URL', 'https://stockmanager.in.ac-creteil.fr/api')],
+
+
     'entities' => [
         'DSDEN77' => [
             'label' => 'DSDEN 77',

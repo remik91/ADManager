@@ -1,25 +1,18 @@
 @extends('layouts.app')
 @section('icon', 'fas fa-fw fa-computer')
-@section('h1', 'Vue de l\'ordinateur')
-
-@section('css')
-
-@stop
+@section('h1', "Vue de l'ordinateur")
 
 @section('content')
-
     <div class="row">
         <div class="col-md-12">
             <div class="card card-outline mb-3">
                 <div class="card-body">
-                    <div class="col-4">
+                    <div class="col-12 col-lg-6">
                         <div class="input-group flex-column">
-                            <form action="{{ route('computer.search', $computer->getDn()) }}" method="POST">
-                                @csrf
+                            <form action="{{ route('computer.search') }}" method="POST"> @csrf
                                 <div class="input-group">
                                     <a href="{{ route('computer.index') }}" class="btn btn-outline-secondary"><i
                                             class="fa-solid fa-chevron-left"></i></a>
-
                                     <input type="text" class="typeahead form-control" id="SearchComputer" name="search"
                                         placeholder="Rechercher...">
                                     <button class="btn btn-outline-secondary" type="submit">Rechercher</button>
@@ -32,110 +25,110 @@
         </div>
     </div>
 
-
     @if ($computer)
         <div class="row">
             <div class="col-md-3">
-
-                <!-- Profile Image -->
                 <div class="card card-primary card-outline mb-3">
                     <div class="card-body">
                         <div class="text-center">
-                            <h1> <i class="fa-solid fa-laptop"></i></h1>
+                            <h1><i class="fa-solid fa-laptop"></i></h1>
                         </div>
-
                         <h3 class="profile-username text-center">{{ $computer->cn[0] }}</h3>
-
                         <ul class="list-group list-group-unbordered mb-3">
-                            <li class="list-group-item">
-                                <b>Hostname DNS</b> <a class="float-end">{{ $computer->dNSHostName[0] }}</a>
-                            </li>
-                            <li class="list-group-item">
-                                <b>Dernière co.</b> <a class="float-end">{{ $computer->lastLogon }}</a>
-                            </li>
-                            <li class="list-group-item">
-                                <b>Nombre de co.</b> <a class="float-end">{{ $computer->logonCount[0] }}</a>
-                            </li>
-                            <li class="list-group-item">
-                                <b>Système d'exp.</b> <a class="float-end">{{ $computer->operatingSystem[0] }}</a>
-                            </li>
-                            <li class="list-group-item">
-                                <b>Version</b> <a class="float-end">{{ $computer->operatingSystemVersion[0] }}</a>
-                            </li>
-                            <li class="list-group-item">
-                                <b>Crée le</b> <a class="float-end">{{ $computer->whenCreated }}</a>
-                            </li>
+                            <li class="list-group-item"><b>Hostname DNS</b> <span
+                                    class="float-end">{{ $computer->dNSHostName[0] ?? '—' }}</span></li>
+                            <li class="list-group-item"><b>Dernière co.</b> <span
+                                    class="float-end">{{ $computer->lastLogon ?? '—' }}</span></li>
+                            <li class="list-group-item"><b>Nombre de co.</b> <span
+                                    class="float-end">{{ $computer->logonCount[0] ?? '—' }}</span></li>
+                            <li class="list-group-item"><b>Système d'exp.</b> <span
+                                    class="float-end">{{ $computer->operatingSystem[0] ?? '—' }}</span></li>
+                            <li class="list-group-item"><b>Version</b> <span
+                                    class="float-end">{{ $computer->operatingSystemVersion[0] ?? '—' }}</span></li>
+                            <li class="list-group-item"><b>Créé le</b> <span
+                                    class="float-end">{{ $computer->whenCreated ?? '—' }}</span></li>
                         </ul>
                     </div>
-                    <!-- /.card-body -->
                 </div>
-                <!-- /.card -->
             </div>
 
-
-
             <div class="col-md-9">
-                @if ($bitlock->exists())
+                {{-- BitLocker: plusieurs objets --}}
+                @if (isset($bitlocks) && $bitlocks->count() > 0)
                     <div class="card mb-3">
-                        <div class="card-header">
-                            Bitlock
+                        <div class="card-header d-flex justify-content-between">
+                            <span>BitLocker</span>
+                            <a class="btn btn-sm btn-outline-secondary"
+                                href="{{ route('computer.bitlocker', ['search' => $computer->cn[0]]) }}" target="_blank">
+                                <i class="fa-solid fa-up-right-from-square me-1"></i> Voir dans la liste
+                            </a>
+                            <a class="btn btn-sm btn-outline-secondary"
+                                href="{{ route('computer.bitlocker', ['search' => $computer->cn[0]]) }}">
+                                Rechercher toutes les clés de cette machine
+                            </a>
+
                         </div>
                         <div class="card-body">
-
-                            <table class="table">
-                                <tbody>
-                                    <tr>
-                                        <th scope="row" style=" vertical-align: middle;">Date & DN : </th>
-                                        <td><input type="text" class="form-control" name="givenName" id="givenName"
-                                                value="{{ $bitlock[0]['distinguishedname'][0] }}" autocomplete="off"
-                                                readonly="readonly">
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row" style=" vertical-align: middle;">ID de mot de passe : </th>
-                                        <td><input type="text" class="form-control" name="uid" id="uid"
-                                                autocomplete="off"
-                                                value="{{ bin2hex($bitlock[0]['msfve-recoveryguid'][0]) }}"
-                                                readonly="readonly"></td>
-                                    </tr>
-                                    <tr>
-                                        <th scope="row" style=" vertical-align: middle;">Mot de passe de récupération
-                                        </th>
-                                        <td>
-                                            <textarea class="form-control" name="mail" id="mail" readonly="readonly">{{ $bitlock[0]['msfve-recoverypassword'][0] }}</textarea>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-bordered align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>DN</th>
+                                            <th>GUID</th>
+                                            <th>Clé de récupération</th>
+                                            <th>Date</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($bitlocks as $b)
+                                            @php
+                                                $dn = $b->getDn();
+                                                preg_match('/\{(.+?)\}/', $b->getName(), $m);
+                                                $guid = $m[1] ?? null;
+                                                $key = $b['msfve-recoverypassword'][0] ?? null;
+                                            @endphp
+                                            <tr>
+                                                <td class="text-truncate" style="max-width:420px">
+                                                    <code>{{ $dn }}</code>
+                                                </td>
+                                                <td><code>{{ $guid ?? '—' }}</code></td>
+                                                <td>
+                                                    @if ($key)
+                                                        <div class="d-flex align-items-center gap-2">
+                                                            <span class="user-select-all">{{ $key }}</span>
+                                                            <button class="btn btn-sm btn-outline-secondary"
+                                                                onclick="navigator.clipboard.writeText('{{ $key }}'); toastr.success('Clé copiée');"><i
+                                                                    class="fa-regular fa-copy"></i></button>
+                                                        </div>
+                                                    @else
+                                                        —
+                                                    @endif
+                                                </td>
+                                                <td>{{ $b->whencreated ?? '—' }}</td>
+                                                <td>
+                                                    @if ($guid)
+                                                        <a class="btn btn-sm btn-outline-primary"
+                                                            href="{{ route('computer.bitlocker', ['search' => $guid]) }}">Rechercher
+                                                            ce GUID</a>
+                                                    @endif
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 @endif
-                @if (isset($stockmanager))
+
+                {{-- StockManager --}}
+                @if (!empty($stockmanager))
                     <div class="card mb-3">
                         <div class="card-body">
                             <div class="alert alert-info" role="alert">
                                 <h5 class="alert-heading">StockManager : Gestion du Stock</h5>
-                                <p>Les données présentées ci-dessous sont issues du StockManager, l'application de
-                                    gestion
-                                    de stock du Rectorat de Créteil. StockManager est l'unique moyen d'ajouter du
-                                    matériel
-                                    au stock de manière officielle.
-
-                                    Il est impératif de noter que toutes les opérations d'ajout de matériel doivent
-                                    être
-                                    effectuées exclusivement via StockManager pour garantir l'intégrité et la
-                                    conformité
-                                    des
-                                    données. Cela assure une traçabilité adéquate et contribue à maintenir le stock
-                                    à
-                                    jour
-                                    et précis.
-
-                                    La mise à jour régulière du stock est essentielle pour assurer la fiabilité des
-                                    informations et pour répondre aux exigences de conformité en matière de gestion
-                                    des
-                                    stocks.
-                                <p>
+                                <p class="mb-0">Données informatives issues de StockManager.</p>
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-bordered table-hover">
@@ -151,57 +144,45 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-
                                         <tr>
-                                            <td>
-                                                <center><a
-                                                        href='{{ url('http://stockmanager.in.ac-creteil.fr/inventaire/view/ordinateur/' . $stockmanager['id']) }}'
-                                                        target="_blank"><i class='fa fa-search-plus fa-fw'></i></a>
-                                                </center>
-                                            </td>
-                                            <td>{{ $stockmanager['benef_uid'] }}</td>
-                                            <td>{{ $stockmanager['benef_name'] }}</td>
-                                            <td>{{ $stockmanager['service'] }}</td>
-                                            <td>{{ $stockmanager['num_serie'] }}</td>
-                                            <td>{{ $stockmanager['addr_mac'] }}</td>
-                                            <td class="text-center">{{ $stockmanager['date_install'] }}</td>
-                                            <!-- ... Ajoutez d'autres cellules en fonction des données ... -->
+                                            <td class="text-center"><a
+                                                    href='{{ url('https://stockmanager.in.ac-creteil.fr/inventaire/view/ordinateur/' . $stockmanager['id']) }}'
+                                                    target="_blank"><i class='fa fa-search-plus fa-fw'></i></a></td>
+                                            <td>{{ $stockmanager['benef_uid'] ?? '—' }}</td>
+                                            <td>{{ $stockmanager['benef_name'] ?? '—' }}</td>
+                                            <td>{{ $stockmanager['service'] ?? '—' }}</td>
+                                            <td>{{ $stockmanager['num_serie'] ?? '—' }}</td>
+                                            <td>{{ $stockmanager['addr_mac'] ?? '—' }}</td>
+                                            <td class="text-center">{{ $stockmanager['date_install'] ?? '—' }}</td>
                                         </tr>
-
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
                 @else
-                    <div class="alert alert-warning" role="alert">
-                        Aucune donnée disponible.
-                    </div>
+                    <div class="alert alert-warning" role="alert">Aucune donnée StockManager disponible.</div>
                 @endif
             </div>
         </div>
     @else
         Aucun résultat pour ce profil d'ordinateur.
     @endif
-
-@stop
-
+@endsection
 
 @section('scriptjs')
-
     <script type="module">
-        var path = "{{ route('computer.autocomplete') }}";
-
+        const path = "{{ route('computer.autocomplete') }}";
         $('#SearchComputer').typeahead({
-
             source: function(query, process) {
                 return $.get(path, {
                     search: query
                 }, function(data) {
                     return process(data);
                 });
-            }
+            },
+            delay: 200,
+            minLength: 2
         });
     </script>
-
 @endsection
