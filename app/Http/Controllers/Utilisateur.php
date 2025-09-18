@@ -9,6 +9,7 @@ use App\Ldap\AD\GroupAD;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Ldap\ORACLE\UserLDAP;
+use Illuminate\Validation\Rule;
 use LdapRecord\LdapRecordException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
@@ -477,6 +478,81 @@ class Utilisateur extends Controller
         return view('user.resultsearch', ['usersldap' => $usersldap]);
     }
 
+    public function searchldapimport(Request $request)
+    {
+        // Whitelist des bases de recherche (labels → base DN)
+        $bases = [
+            'personnels EN' => 'ou=personnels EN,ou=ac-creteil,ou=education,o=gouv,c=fr',
+            'autres'        => 'ou=autres,ou=ac-creteil,ou=education,o=gouv,c=fr',
+        ];
+
+        // Validation entrée
+        $request->validate([
+            'ou'   => ['required', Rule::in(array_keys($bases))],
+            'crit' => ['required', Rule::in(['uid', 'sn', 'mail'])],
+            'q'    => ['required', 'string', 'min:2', 'max:64'],
+            'cookie' => ['nullable', 'string'],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+        ]);
+
+        $base   = $bases[$request->ou];
+        $crit   = $request->crit;
+        $term   = trim($request->q);
+        $cookie = $request->get('cookie');
+        $perPage = (int) $request->integer('per_page', 25);
+
+        // Attributs utiles pour le rendu + import
+        $attrs = [
+            'cn',
+            'uid',
+            'sn',
+            'givenname',
+            'mail',
+            'division',
+            'department',
+            'datenaissance',
+            'service',
+            'title',
+            'fonction',
+            'physicalDeliveryOfficeName',
+            'bureau',
+        ];
+
+        $q = UserLDAP::query()
+            ->in($base)
+            ->select($attrs);
+
+        // Filtre souple selon le critère
+        switch ($crit) {
+            case 'uid':
+                $q->where('uid', 'starts_with', $term);
+                $q->orderBy('uid');
+                break;
+            case 'mail':
+                $q->whereContains('mail', $term);
+                $q->orderBy('mail');
+                break;
+            case 'sn':
+            default:
+                // Nom : on cherche dans sn + givenname
+                $q->whereContains('sn', $term)
+                    ->orWhereContains('givenname', $term);
+                $q->orderBy('sn')->orderBy('givenname');
+                break;
+        }
+
+        // Pagination LDAP via cookie
+        $usersldap = $q->paginate($perPage);
+
+        // Le partial a besoin des paramètres pour le bouton "Plus"
+        return view('user.resultsearch', [
+            'usersldap'  => $usersldap,
+            'q'          => $term,
+            'ou'         => $request->ou,
+            'crit'       => $crit,
+            'perPage'    => $perPage,
+        ]);
+    }
 
     public function checkldap(Request $request)
     {

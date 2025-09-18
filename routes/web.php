@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/user/create', [Utilisateur::class, 'create'])->name('user.create');
 
     Route::get('/user/import/searchldap', [Utilisateur::class, 'searchldap'])->name('user.searchldap');
+    Route::get('/user/import/searchldapimport', [Utilisateur::class, 'searchldapimport'])->name('user.searchldapimport');
 
     Route::get('/user/tri', [Utilisateur::class, 'tri'])->name('user.tri');
 
