@@ -319,4 +319,11 @@ class Groupe extends Controller
 
         return response()->json($userNames);
     }
+
+    // app/Http/Controllers/GlGroupController.php
+    public function procedure()
+    {
+        // Rien de spécial à charger pour le moment
+        return view('group.procedure'); // le fichier du canvas
+    }
 }

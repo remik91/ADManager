@@ -88,7 +88,10 @@
                             <div class="sb-nav-link-icon"><i class="fa-solid fa-folder-tree"></i></div>
                             Partages (GL)
                         </a>
-
+                        <a class="nav-link" href="{{ route('group.procedure') }}">
+                            <div class="sb-nav-link-icon"><i class="fa-solid fa-book me-1"></i></div>
+                            Procédure (AGDLP)
+                        </a>
 
                         <div class="sb-sidenav-menu-heading">Ressources</div>
                         <a class="nav-link" href="{{ route('outil') }}">

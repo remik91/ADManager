@@ -77,6 +77,12 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/group/search', [Groupe::class, 'search'])->name('group.search');
     Route::get('/group/autocomplete', [Groupe::class, 'autocomplete'])->name('group.autocomplete');
 
+    // routes/web.php
+    Route::get('/group/procedure', [Groupe::class, 'procedure'])->name('group.procedure');
+
+
+
+
     Route::get('/service', [Groupe::class, 'index_services'])->name('service.index');
     Route::post('/service/create', [Groupe::class, 'create_service'])->name('service.create');
 
